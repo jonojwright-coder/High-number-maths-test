@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Maths Trainer">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<title>Maths Trainer Pro</title>
+<style>
+:root{--bg:#08111f;--card:#111c2e;--card2:#18263d;--line:#293a55;--text:#f8fafc;--muted:#9fb0c8;--blue:#3b82f6;--green:#22c55e;--red:#ef4444;--amber:#f59e0b}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07101d,#0e1727);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+.wrap{max-width:820px;margin:auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.brand{font-size:25px;font-weight:850}.muted{color:var(--muted)}.small{font-size:12px}
+.card{background:rgba(17,28,46,.97);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 12px 28px #0004}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+button,input,select{font:inherit}button{border:0;border-radius:14px;padding:13px 8px;background:var(--card2);color:white;font-weight:750}button.active{background:#1d4f91;outline:2px solid #60a5fa}button.primary{background:#2563eb}button.warn{background:#78350f}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.stat{background:var(--card2);border-radius:14px;padding:10px 5px;text-align:center}.stat b{display:block;font-size:19px}.stat span{font-size:11px;color:var(--muted)}
+.question{text-align:center;font-size:48px;font-weight:850;margin:17px 0}.answer{width:100%;font-size:34px;text-align:center;padding:13px;border-radius:15px;border:2px solid var(--line);background:#0a1424;color:white}
+.feedback{text-align:center;min-height:28px;font-weight:800;margin:9px}.ok{color:var(--green)}.bad{color:var(--red)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.bar{height:10px;background:#253650;border-radius:20px;overflow:hidden;margin-top:9px}.fill{height:100%;background:var(--blue)}
+.goalfill{background:var(--green)}.hidden{display:none!important}.history{max-height:270px;overflow:auto}.hist{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+canvas{width:100%;height:190px;background:#0c1728;border-radius:14px;margin-top:10px}.pill{padding:5px 9px;border-radius:99px;background:var(--card2);font-size:12px}.timer{font-variant-numeric:tabular-nums}
+@media(max-width:520px){.question{font-size:43px}.stats .stat b{font-size:17px}.grid4 button{font-size:12px;padding:12px 3px}}
+</style>
+</head>
+<body><div class="wrap">
+<header><div><div class="brand">Maths Trainer</div><div class="muted small">Mental maths • offline • saved on this device</div></div><button id="settings">⚙︎</button></header>
+
+<div class="card">
+ <div class="grid4" id="modes">
+  <button data-m="add" class="active">Addition</button><button data-m="sub">Subtract</button><button data-m="mul">Multiply</button><button data-m="div">Divide</button>
+ </div>
+</div>
+
+<div class="card">
+ <div class="grid3" id="practiceModes">
+  <button data-p="practice" class="active">Practice</button><button data-p="timed">2-min Test</button><button data-p="mixed">Mixed</button>
+ </div>
+</div>
+
+<div class="card">
+ <div class="row"><div><b id="levelTitle"></b><div id="levelDesc" class="small muted"></div></div><span class="pill" id="timer"></span></div>
+ <div class="bar"><div id="levelFill" class="fill"></div></div>
+ <div class="small muted" id="levelNote" style="margin-top:6px"></div>
+</div>
+
+<div class="card">
+ <div class="stats"><div class="stat"><b id="acc">0%</b><span>Accuracy</span></div><div class="stat"><b id="streak">0</b><span>Streak</span></div><div class="stat"><b id="best">0</b><span>Best</span></div><div class="stat"><b id="total">0</b><span>Answered</span></div></div>
+</div>
+
+<div class="card">
+ <div class="question" id="q"></div>
+ <input class="answer" id="a" type="number" inputmode="numeric" placeholder="Answer" autocomplete="off">
+ <div class="feedback" id="fb"></div>
+ <div class="grid2"><button class="primary" id="check">Check</button><button id="skip">Skip</button></div>
+</div>
+
+<div class="card">
+ <div class="row"><div><b>Daily goal</b><div class="small muted">Correct answers today</div></div><b id="goalText"></b></div>
+ <div class="bar"><div id="goalFill" class="fill goalfill"></div></div>
+</div>
+
+<div class="card">
+ <div class="grid3"><button id="today" class="active">Today</button><button id="progress">Progress</button><button id="history">History</button></div>
+ <div id="panel" style="margin-top:12px"></div>
+ <canvas id="chart" class="hidden" width="700" height="190"></canvas>
+ <div id="hist" class="history hidden"></div>
+</div>
+
+<div id="settingsPanel" class="card hidden">
+ <b>Settings</b>
+ <div style="margin-top:12px" class="row"><span>Daily goal</span><select id="goal"><option>10</option><option>20</option><option selected>30</option><option>50</option><option>100</option></select></div>
+ <div style="margin-top:10px" class="row"><span>Level</span><select id="level"></select></div>
+ <div class="small muted" style="margin-top:12px">Smart progression: advance after at least 20 recent questions with 90%+ accuracy. If recent accuracy falls below 70%, the app recommends more practice at the current level.</div>
+ <button id="reset" class="warn" style="width:100%;margin-top:14px">Reset all progress</button>
+</div>
+</div>
+<script>
+const L={
+add:["To 10","To 20","2-digit, no carrying","2-digit mixed","Up to 200","Up to 500","Up to 1,000","Crossing 1,000","Up to 5,000","Up to 10,000"],
+sub:["To 10","To 20","2-digit, no borrowing","2-digit mixed","Up to 200","Up to 500","Up to 1,000","Crossing hundreds","Up to 5,000","Up to 10,000"],
+mul:["×2 & ×5","×10","×3 & ×4","×6","×7","×8","×9","×11","×12","Mixed 2–12"],
+div:["÷2 & ÷5","÷10","÷3 & ÷4","÷6","÷7","÷8","÷9","÷11","÷12","Mixed exact division"]};
+const K="mathTrainerPro2";let D=JSON.parse(localStorage.getItem(K)||"null")||{mode:"add",play:"practice",levels:{add:1,sub:1,mul:1,div:1},history:[],goal:30};let cur,streak=0,screen="today",endAt=0,tick=null;
+const $=x=>document.getElementById(x),save=()=>localStorage.setItem(K,JSON.stringify(D)),day=()=>new Date().toISOString().slice(0,10),rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+function modeName(m){return {add:"Addition",sub:"Subtraction",mul:"Multiplication",div:"Division"}[m]}
+function gen(m,l){
+ let a,b,pool,d,q;
+ if(m==="add"){if(l===1){a=rnd(1,9);b=rnd(1,9)}else if(l===2){a=rnd(5,20);b=rnd(1,20)}else if(l===3){do{a=rnd(10,89);b=rnd(10,89)}while(a%10+b%10>=10)}else{let ranges=[[10,99,10,99],[50,199,10,99],[100,499,20,199],[300,999,20,199],[850,999,30,199],[1000,4999,50,999],[1000,9999,100,1999]][l-4];a=rnd(ranges[0],ranges[1]);b=rnd(ranges[2],ranges[3])}return{a,b,o:"+",ans:a+b}}
+ if(m==="sub"){let max=[10,20,99,99,200,500,1000,1500,5000,10000][l-1];a=rnd(Math.ceil(max*.5),max);b=rnd(1,a);if(l===3){let z=0;while(a%10<b%10&&z++<100){a=rnd(20,99);b=rnd(10,a)}}return{a,b,o:"−",ans:a-b}}
+ pool=[[2,5],[10],[3,4],[6],[7],[8],[9],[11],[12],[2,3,4,5,6,7,8,9,10,11,12]][l-1];d=pool[rnd(0,pool.length-1)];q=rnd(2,12);
+ return m==="mul"?{a:d,b:q,o:"×",ans:d*q}:{a:d*q,b:d,o:"÷",ans:q};
+}
+function activeMode(){if(D.play==="mixed"){let ms=["add","sub","mul","div"];return ms[rnd(0,3)]}return D.mode}
+function next(){let m=activeMode(),l=D.levels[m];cur={...gen(m,l),m,l};$("q").textContent=`${cur.a} ${cur.o} ${cur.b}`;$("a").value="";$("fb").textContent="";$("fb").className="feedback";setTimeout(()=>$("a").focus(),30)}
+function recent(m,l,n=20){return D.history.filter(x=>x.m===m&&x.l===l).slice(-n)}
+function stats(m=D.mode,l=D.levels[D.mode]){let h=D.history.filter(x=>x.m===m&&x.l===l),c=h.filter(x=>x.ok).length;return{t:h.length,c,acc:h.length?Math.round(c/h.length*100):0,b:h.reduce((z,x)=>Math.max(z,x.st||0),0)}}
+function smartLevel(){
+ let m=cur.m,l=D.levels[m],r=recent(m,l,20);if(r.length===20&&r.filter(x=>x.ok).length>=18&&l<10){D.levels[m]++;save();$("fb").textContent=`Level up — ${modeName(m)} Level ${D.levels[m]}!`;$("fb").className="feedback ok";return true}return false;
+}
+function check(){
+ if($("a").value==="")return;let u=Number($("a").value),ok=u===cur.ans;streak=ok?streak+1:0;D.history.push({date:day(),ts:Date.now(),m:cur.m,l:cur.l,q:`${cur.a} ${cur.o} ${cur.b}`,u,ans:cur.ans,ok,st:streak});if(D.history.length>5000)D.history=D.history.slice(-5000);save();$("fb").textContent=ok?"Correct ✓":`Not quite — ${cur.ans}`;$("fb").className="feedback "+(ok?"ok":"bad");render();let leveled=smartLevel();setTimeout(next,leveled?1000:650)}
+function render(){
+ document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("active",b.dataset.m===D.mode));document.querySelectorAll("#practiceModes button").forEach(b=>b.classList.toggle("active",b.dataset.p===D.play));
+ let s=stats(),r=recent(D.mode,D.levels[D.mode],20),ra=r.length?Math.round(r.filter(x=>x.ok).length/r.length*100):0;
+ $("levelTitle").textContent=`${modeName(D.mode)} — Level ${D.levels[D.mode]}`;$("levelDesc").textContent=L[D.mode][D.levels[D.mode]-1];
+ $("acc").textContent=s.acc+"%";$("streak").textContent=streak;$("best").textContent=s.b;$("total").textContent=s.t;
+ $("levelFill").style.width=Math.min(100,r.length/20*100)+"%";$("levelNote").textContent=r.length<20?`${r.length}/20 recent questions • 90% accuracy needed to advance`:`Recent accuracy ${ra}%`+(ra>=90?" • ready to advance":" • keep practising");
+ let td=D.history.filter(x=>x.date===day()),correct=td.filter(x=>x.ok).length;$("goalText").textContent=`${correct} / ${D.goal}`;$("goalFill").style.width=Math.min(100,correct/D.goal*100)+"%";
+ renderPanel();
+}
+function renderPanel(){
+ ["today","progress","history"].forEach(x=>$(x).classList.toggle("active",screen===x));$("panel").classList.toggle("hidden",screen==="history");$("chart").classList.toggle("hidden",screen!=="progress");$("hist").classList.toggle("hidden",screen!=="history");
+ if(screen==="today"){let h=D.history.filter(x=>x.date===day()),c=h.filter(x=>x.ok).length;$("panel").innerHTML=`<div class="stats"><div class="stat"><b>${h.length}</b><span>Questions</span></div><div class="stat"><b>${c}</b><span>Correct</span></div><div class="stat"><b>${h.length?Math.round(c/h.length*100):0}%</b><span>Accuracy</span></div><div class="stat"><b>${h.reduce((z,x)=>Math.max(z,x.st||0),0)}</b><span>Best streak</span></div></div>`}
+ if(screen==="history"){$("hist").innerHTML=D.history.slice().reverse().slice(0,100).map(x=>`<div class="hist"><span>${x.q}</span><b class="${x.ok?'ok':'bad'}">${x.u}</b><span>${x.ok?'✓':'✕'}</span></div>`).join("")||'<span class="muted">No history yet.</span>'}
+ if(screen==="progress"){drawChart()}
+}
+function drawChart(){
+ let c=$("chart"),ctx=c.getContext("2d"),days=[];for(let i=13;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10))}
+ let vals=days.map(d=>{let h=D.history.filter(x=>x.date===d);return h.length?Math.round(h.filter(x=>x.ok).length/h.length*100):null});ctx.clearRect(0,0,c.width,c.height);ctx.strokeStyle="#334155";ctx.lineWidth=1;[25,50,75,100].forEach(v=>{let y=170-v*1.45;ctx.beginPath();ctx.moveTo(35,y);ctx.lineTo(685,y);ctx.stroke()});ctx.strokeStyle="#60a5fa";ctx.lineWidth=4;ctx.beginPath();let started=false;vals.forEach((v,i)=>{if(v===null)return;let x=40+i*(640/13),y=170-v*1.45;if(!started){ctx.moveTo(x,y);started=true}else ctx.lineTo(x,y)});ctx.stroke();ctx.fillStyle="#9fb0c8";ctx.font="11px system-ui";ctx.fillText("14-day accuracy",12,16);ctx.fillText("100%",2,28);ctx.fillText("0%",14,174)
+}
+function startTimer(){clearInterval(tick);endAt=Date.now()+120000;$("timer").textContent="2:00";tick=setInterval(()=>{let n=Math.max(0,endAt-Date.now()),sec=Math.ceil(n/1000);$("timer").textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`;if(n<=0){clearInterval(tick);$("timer").textContent="Finished";alert("Time! Check Today or Progress to see your result.");D.play="practice";render()}},250)}
+document.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>{D.mode=b.dataset.m;save();render();next()});
+document.querySelectorAll("#practiceModes button").forEach(b=>b.onclick=()=>{D.play=b.dataset.p;save();if(D.play==="timed")startTimer();else{clearInterval(tick);$("timer").textContent=""}render();next()});
+$("check").onclick=check;$("a").onkeydown=e=>{if(e.key==="Enter")check()};$("skip").onclick=()=>{streak=0;next();render()};
+$("today").onclick=()=>{screen="today";renderPanel()};$("progress").onclick=()=>{screen="progress";renderPanel()};$("history").onclick=()=>{screen="history";renderPanel()};
+$("settings").onclick=()=>{$("settingsPanel").classList.toggle("hidden")};$("goal").value=D.goal;$("goal").onchange=e=>{D.goal=Number(e.target.value);save();render()};
+for(let i=1;i<=10;i++)$("level").innerHTML+=`<option value="${i}">Level ${i}</option>`;$("level").value=D.levels[D.mode];$("level").onchange=e=>{D.levels[D.mode]=Number(e.target.value);save();render();next()};
+$("reset").onclick=()=>{if(confirm("Reset all levels, history and statistics?")){localStorage.removeItem(K);location.reload()}};
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+render();next();
+</script></body></html>
